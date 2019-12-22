@@ -1,11 +1,16 @@
 
 import multiprocessing as mp
 import numpy as np
+from collections import namedtuple
 
 from rlpyt.utils.buffer import buffer_from_example, torchify_buffer
 from rlpyt.agents.base import AgentInputs
 from rlpyt.samplers.collections import (Samples, AgentSamples, AgentSamplesBsv,
     EnvSamples)
+
+from rlpyt.envs.base import Env, EnvStep
+
+EnvInfo = namedtuple("EnvInfo", ["score_reward"])
 
 
 def build_samples_buffer(agent, env, batch_spec, bootstrap_value=False,
@@ -64,8 +69,10 @@ def get_example_outputs(agent, env, examples, subprocess=False):
         import torch
         torch.set_num_threads(1)  # Some fix to prevent MKL hang.
     o = env.reset()
-    a = env.action_space.sample()
+    a = np.array(env.action_space.sample())
     o, r, d, env_info = env.step(a)
+    env_info = EnvInfo(score_reward=env_info["score_reward"])
+    o,r,d,env_info =EnvStep(o,r,d,env_info)
     r = np.asarray(r, dtype="float32")  # Must match torch float dtype here.
     agent.reset()
     agent_inputs = torchify_buffer(AgentInputs(o, a, r))

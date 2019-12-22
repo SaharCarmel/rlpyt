@@ -77,7 +77,9 @@ class DecorrelatingStartCollector(BaseCollector):
         observation = buffer_from_example(observations[0], len(self.envs))
         for b, obs in enumerate(observations):
             observation[b] = obs  # numpy array or namedarraytuple
-        prev_action = np.stack([env.action_space.null_value()
+        # prev_action = np.stack([env.action_space.null_value()
+        #     for env in self.envs])
+        prev_action = np.stack([0
             for env in self.envs])
         prev_reward = np.zeros(len(self.envs), dtype="float32")
         if self.rank == 0:
@@ -94,7 +96,8 @@ class DecorrelatingStartCollector(BaseCollector):
                         o = env.reset()
                         traj_infos[b] = self.TrajInfoCls()
                     if d:
-                        a = env.action_space.null_value()
+                        # a = env.action_space.null_value()
+                        a = 0
                         r = 0
                 observation[b] = o
                 prev_action[b] = a

@@ -1,5 +1,6 @@
 
 import numpy as np
+from collections import namedtuple
 
 from rlpyt.samplers.collectors import (DecorrelatingStartCollector,
     BaseEvalCollector)
@@ -7,6 +8,9 @@ from rlpyt.agents.base import AgentInputs
 from rlpyt.utils.buffer import (torchify_buffer, numpify_buffer, buffer_from_example,
     buffer_method)
 
+from rlpyt.envs.base import Env, EnvStep
+
+EnvInfo = namedtuple("EnvInfo", ["score_reward"])
 
 class CpuResetCollector(DecorrelatingStartCollector):
 
@@ -30,6 +34,8 @@ class CpuResetCollector(DecorrelatingStartCollector):
             for b, env in enumerate(self.envs):
                 # Environment inputs and outputs are numpy arrays.
                 o, r, d, env_info = env.step(action[b])
+                env_info = EnvInfo(score_reward=env_info["score_reward"])
+                o,r,d,env_info =EnvStep(o,r,d,env_info)
                 traj_infos[b].step(observation[b], action[b], r, d, agent_info[b],
                     env_info)
                 if getattr(env_info, "traj_done", d):
