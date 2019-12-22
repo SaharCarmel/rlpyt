@@ -4,7 +4,9 @@ from rlpyt.samplers.buffer import build_samples_buffer
 from rlpyt.utils.logging import logger
 from rlpyt.samplers.parallel.cpu.collectors import CpuResetCollector
 from rlpyt.samplers.serial.collectors import SerialEvalCollector
+from collections import namedtuple
 
+EnvSpaces = namedtuple("EnvSpaces", ["observation", "action"])
 
 class SerialSampler(BaseSampler):
     """Uses same functionality as ParallelSampler but does not fork worker
@@ -31,7 +33,11 @@ class SerialSampler(BaseSampler):
         envs = [self.EnvCls(seed) for _ in range(B)]
         global_B = B * world_size
         env_ranks = list(range(rank * B, (rank + 1) * B))
-        agent.initialize(envs[0].spaces, share_memory=False,
+        spaces = EnvSpaces(
+            observation=envs[0].observation_space,
+            action=envs[0].action_space,
+        )
+        agent.initialize(spaces, share_memory=False,
             global_B=global_B, env_ranks=env_ranks)
         samples_pyt, samples_np, examples = build_samples_buffer(agent, envs[0],
             self.batch_spec, bootstrap_value, agent_shared=False,
@@ -50,7 +56,7 @@ class SerialSampler(BaseSampler):
             env_ranks=env_ranks,  # Might get applied redundantly to agent.
         )
         if self.eval_n_envs > 0:  # May do evaluation.
-            eval_envs = [self.EnvCls(**self.eval_env_kwargs)
+            eval_envs = [self.EnvCls(seed)
                 for _ in range(self.eval_n_envs)]
             eval_CollectorCls = self.eval_CollectorCls or SerialEvalCollector
             self.eval_collector = eval_CollectorCls(
