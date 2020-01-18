@@ -229,7 +229,6 @@ class MinibatchRlEval(MinibatchRlBase):
 
     def train(self):
         n_itr = self.startup()
-        env_queue = 0
         with logger.prefix(f"itr #0 "):
             eval_traj_infos, eval_time = self.evaluate_agent(0)
             self.log_diagnostics(0, eval_traj_infos, eval_time)
@@ -242,7 +241,8 @@ class MinibatchRlEval(MinibatchRlBase):
                 self.store_diagnostics(itr, traj_infos, opt_info)
                 if (itr + 1) % self.log_interval_itrs == 0:
                     eval_traj_infos, eval_time = self.evaluate_agent(itr)
-                    # sample.update()
+                    self.logCoachEnv(self.sampler.coach.generateStatistics())
+                    self.sampler.updateEnvs()
                     self.log_diagnostics(itr, eval_traj_infos, eval_time)
                 # if env_queue % self.sampler.coach.vectorSize == 0:
                 #     env_queue = 0
@@ -279,3 +279,8 @@ class MinibatchRlEval(MinibatchRlBase):
         self._cum_eval_time += eval_time
         logger.record_tabular('CumEvalTime', self._cum_eval_time)
         super().log_diagnostics(itr, eval_traj_infos, eval_time)
+
+    def logCoachEnv(self,envDict):
+        for key in envDict:
+            logger.record_tabular(key, envDict[key])
+

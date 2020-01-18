@@ -79,6 +79,7 @@ class SerialSampler(BaseSampler):
         self.collector = collector
         self.agent_inputs = agent_inputs
         self.traj_infos = traj_infos
+        self.seed = seed
         logger.log("Serial Sampler initialized.")
         return examples
 
@@ -93,3 +94,47 @@ class SerialSampler(BaseSampler):
 
     def evaluate_agent(self, itr):
         return self.eval_collector.collect_evaluation(itr)
+
+    def updateEnvs(self,
+            affinity=None,
+            bootstrap_value=True,
+            traj_info_kwargs=None,
+            rank=0,
+            world_size=1,):
+        B = self.batch_spec.B
+        envList = self.coach.generateVector()
+        envs = [self.EnvCls(self.seed, level) for level in envList]
+        # envs = [self.EnvCls(seed) for _ in range(B)]
+        global_B = B * world_size
+        env_ranks = list(range(rank * B, (rank + 1) * B))
+        spaces = EnvSpaces(
+            observation=envs[0].observation_space,
+            action=envs[0].action_space,
+        )
+        samples_pyt, samples_np, examples = build_samples_buffer(self.agent, envs[0],
+            self.batch_spec, bootstrap_value, agent_shared=False,
+            env_shared=False, subprocess=False)
+        # if traj_info_kwargs:
+        #     for k, v in traj_info_kwargs.items():
+        #         setattr(self.TrajInfoCls, "_" + k, v)  # Avoid passing at init.
+        collector = self.CollectorCls(
+            rank=0,
+            envs=envs,
+            samples_np=samples_np,
+            batch_T=self.batch_spec.T,
+            TrajInfoCls=self.TrajInfoCls,
+            agent=self.agent,
+            global_B=global_B,
+            env_ranks=env_ranks,  # Might get applied redundantly to agent.
+        )
+
+        agent_inputs, traj_infos = collector.start_envs(
+            self.max_decorrelation_steps)
+        # collector.start_agent()
+
+        # self.agent = agent
+        self.samples_pyt = samples_pyt
+        self.samples_np = samples_np
+        self.collector = collector
+        self.agent_inputs = agent_inputs
+        self.traj_infos = traj_infos
