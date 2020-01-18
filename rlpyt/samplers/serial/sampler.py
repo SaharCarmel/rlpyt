@@ -30,7 +30,9 @@ class SerialSampler(BaseSampler):
             world_size=1,
             ):
         B = self.batch_spec.B
-        envs = [self.EnvCls(seed) for _ in range(B)]
+        envList = self.coach.generateVector()
+        envs = [self.EnvCls(seed, level) for level in envList]
+        # envs = [self.EnvCls(seed) for _ in range(B)]
         global_B = B * world_size
         env_ranks = list(range(rank * B, (rank + 1) * B))
         spaces = EnvSpaces(
@@ -55,7 +57,7 @@ class SerialSampler(BaseSampler):
             global_B=global_B,
             env_ranks=env_ranks,  # Might get applied redundantly to agent.
         )
-        if self.eval_n_envs > 0:  # May do evaluation.
+        if self.eval_n_envs > 0:  # May do evaluation. TODO: Change evaluate to certain scene
             eval_envs = [self.EnvCls(seed)
                 for _ in range(self.eval_n_envs)]
             eval_CollectorCls = self.eval_CollectorCls or SerialEvalCollector
