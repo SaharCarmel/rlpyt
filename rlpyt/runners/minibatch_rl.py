@@ -242,7 +242,9 @@ class MinibatchRlEval(MinibatchRlBase):
                 if (itr + 1) % self.log_interval_itrs == 0:
                     eval_traj_infos, eval_time = self.evaluate_agent(itr)
                     self.logCoachEnv(self.sampler.coach.generateStatistics())
-                    self.sampler.updateEnvs()
+                    reward = eval_traj_infos
+                    self.sampler.updateEnvs(reward,itr)
+                    logger.log("Evaluating bandit..")
                     self.log_diagnostics(itr, eval_traj_infos, eval_time)
                 # if env_queue % self.sampler.coach.vectorSize == 0:
                 #     env_queue = 0

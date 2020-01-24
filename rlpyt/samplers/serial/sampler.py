@@ -30,7 +30,7 @@ class SerialSampler(BaseSampler):
             world_size=1,
             ):
         B = self.batch_spec.B
-        envList = self.coach.generateVector()
+        envList = self.coach.generateInitialVector()
         envs = [self.EnvCls(seed, level) for level in envList]
         # envs = [self.EnvCls(seed) for _ in range(B)]
         global_B = B * world_size
@@ -96,13 +96,15 @@ class SerialSampler(BaseSampler):
         return self.eval_collector.collect_evaluation(itr)
 
     def updateEnvs(self,
+            reward,
+            itr,
             affinity=None,
             bootstrap_value=True,
             traj_info_kwargs=None,
             rank=0,
             world_size=1,):
         B = self.batch_spec.B
-        envList = self.coach.generateVector()
+        envList = self.coach.generateVector(reward, itr)
         envs = [self.EnvCls(self.seed, level) for level in envList]
         # envs = [self.EnvCls(seed) for _ in range(B)]
         global_B = B * world_size
