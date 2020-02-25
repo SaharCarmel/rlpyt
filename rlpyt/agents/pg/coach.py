@@ -14,8 +14,10 @@ class Bandit():
 
     def updateQ(self, reward, iteration, totalCounts):
         self.Q = self.beta*self.Q + reward
-        self.counts = self.counts*self.beta + iteration
-        self.score = self.Q +math.sqrt((2*math.log(totalCounts))/(self.counts))
+        self.counts = self.counts + iteration
+        variance = self.beta * math.sqrt((2*math.log(totalCounts))/(self.counts))
+        logger.log("Variance - {}".format(self.env), variance)
+        self.score = self.Q + variance
     
     def __repr__(self):
         return "Env:{} with current Q:{} and last time used in iteration:{}".format(self.env, self.Q, self.i)
@@ -65,7 +67,7 @@ class Coach():
         
 
     def generateBanditVector(self,reward, iteration):
-        self.totalCounts = self.totalCounts*self.beta + 1
+        self.totalCounts = self.totalCounts + 1
         for bandit in self.banditList:
             if bandit.env == self.currentEnv.env:
                 bandit.updateQ(reward, 1, totalCounts=self.totalCounts)
