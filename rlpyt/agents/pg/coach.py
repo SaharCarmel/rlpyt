@@ -16,14 +16,14 @@ class Bandit():
         self.Q = self.beta*self.Q + reward
         self.counts = self.counts + iteration
         variance = self.beta * math.sqrt((2*math.log(totalCounts))/(self.counts))
-        logger.log("Variance - {}".format(self.env), variance)
+        logger.record_tabular("Variance - {}".format(self.env), variance)
         self.score = self.Q + variance
     
     def __repr__(self):
         return "Env:{} with current Q:{} and last time used in iteration:{}".format(self.env, self.Q, self.i)
 
 class Coach():
-    def __init__(self, envOptions, vectorSize, algo='Random', beta=0.1, initialQ=1):
+    def __init__(self, envOptions, vectorSize, algo='Random', beta=0.1, initialQ=1, rewardFunc='Average'):
         self.envOptions = envOptions
         self.vectorSize = vectorSize
         self.envList = []
@@ -33,10 +33,14 @@ class Coach():
                                   'Bandit': self.generateBanditVector}
         self.banditList = [Bandit(env, beta, initialQ) for env in envOptions]
         self.currentEnv = []
+        self.calculateRewardFunc = {'Average': self._calculateAvgReturn,
+                                    'Diff': self._calculateDiffReturn}
+        self.calculateRewardFunc = self.calculateRewardFunc[rewardFunc]
+        self.lastReward = 0
         self.totalCounts = 0
 
     def generateVector(self, reward, iteration):
-        reward = self._calculateAvgReturn(reward)
+        reward = self.calculateRewardFunc(reward)
         return self.generateFunctions[self.algo](reward, iteration)
 
     def generateStatistics(self):
@@ -90,6 +94,14 @@ class Coach():
         _discountedReturnAvg = _discountedReturnAvg / len(reward)
         return _returnAvg
     
+    def _calculateDiffReturn(self, reward):
+        _currentReward = self._calculateAvgReturn(reward)
+        _diff = _currentReward - self.lastReward
+        logger.record_tabular("ReturnDiff", _diff)
+        self.lastReward = _currentReward
+        return _diff
+        
+
     def generateInitialVector(self):
         self.currentEnv = self.banditList[0]
         return [self.envOptions[0] for i in range(self.vectorSize)]
