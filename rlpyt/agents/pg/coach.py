@@ -3,7 +3,7 @@ from rlpyt.utils.logging import logger
 import numpy as np
 import math
 
-
+##check
 class Bandit():
     def __init__(self, env, beta, initialQ, updateQFunc='UCB'):
         self.env = env
