@@ -5,14 +5,16 @@ import math
 
 
 class Bandit():
-    def __init__(self, env, beta, initialQ):
+    def __init__(self, env, beta, initialQ, updateQFunc='UCB'):
         self.env = env
         self.Q = initialQ
         self.counts = 1
         self.beta= beta
         self.score = 0
+        self.updateQfunc = {'UCB': self.updateQ_UCB}
+        self.updateQfunc = self.updateQfunc[updateQFunc]
 
-    def updateQ(self, reward, iteration, totalCounts):
+    def updateQ_UCB(self, reward, iteration, totalCounts):
         self.Q = self.beta*self.Q + reward
         self.counts = self.counts + iteration
         variance = self.beta * math.sqrt((2*math.log(totalCounts))/(self.counts))
@@ -23,7 +25,7 @@ class Bandit():
         return "Env:{} with current Q:{} and last time used in iteration:{}".format(self.env, self.Q, self.i)
 
 class Coach():
-    def __init__(self, envOptions, vectorSize, algo='Random', beta=0.1, initialQ=1, rewardFunc='Average'):
+    def __init__(self, envOptions, vectorSize, algo='Random', beta=0.1, initialQ=1, rewardFunc='Average', banditUpdateQFunc='UCB'):
         self.envOptions = envOptions
         self.vectorSize = vectorSize
         self.envList = []
@@ -31,7 +33,7 @@ class Coach():
         self.beta = beta
         self.generateFunctions = {'Random': self.generateRandomVector,
                                   'Bandit': self.generateBanditVector}
-        self.banditList = [Bandit(env, beta, initialQ) for env in envOptions]
+        self.banditList = [Bandit(env= env, beta=beta, initialQ = initialQ, updateQFunc=banditUpdateQFunc) for env in envOptions]
         self.currentEnv = []
         self.calculateRewardFunc = {'Average': self._calculateAvgReturn,
                                     'Diff': self._calculateDiffReturn}
@@ -74,9 +76,9 @@ class Coach():
         self.totalCounts = self.totalCounts + 1
         for bandit in self.banditList:
             if bandit.env == self.currentEnv.env:
-                bandit.updateQ(reward, 1, totalCounts=self.totalCounts)
+                bandit.updateQfunc(reward, 1, totalCounts=self.totalCounts)
             else:
-                bandit.updateQ(0,0,totalCounts=self.totalCounts)
+                bandit.updateQfunc(0,0,totalCounts=self.totalCounts)
         self.chooseEnv()
         self.envList = []
         for i in range(self.vectorSize):
