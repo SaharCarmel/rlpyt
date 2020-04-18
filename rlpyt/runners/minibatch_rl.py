@@ -262,6 +262,7 @@ class MinibatchRlEval(MinibatchRlBase):
             eval_time = -time.time()
             traj_infos = self.sampler.evaluate_agent(itr)
             eval_time += time.time()
+            traj_infos = self.sampler.dump_video(itr)
         else:
             traj_infos = []
             eval_time = 0.0

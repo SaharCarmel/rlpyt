@@ -67,6 +67,7 @@ class SerialSampler(BaseSampler):
                 TrajInfoCls=self.TrajInfoCls,
                 max_T=self.eval_max_steps // self.eval_n_envs,
                 max_trajectories=self.eval_max_trajectories,
+                dump_env = [self.dump_env(0, self.eval_env)]
             )
 
         agent_inputs, traj_infos = collector.start_envs(
@@ -94,6 +95,9 @@ class SerialSampler(BaseSampler):
 
     def evaluate_agent(self, itr):
         return self.eval_collector.collect_evaluation(itr)
+    
+    def dump_video(self, itr):
+        return self.eval_collector.dump_video(itr)
 
     def updateEnvs(self,
             reward,

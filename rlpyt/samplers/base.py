@@ -18,6 +18,7 @@ class BaseSampler:
             CollectorCls,
             coach,
             eval_env,
+            dump_env,
             max_decorrelation_steps=100,
             TrajInfoCls=TrajInfo,
             eval_n_envs=0,  # 0 for no eval setup.
@@ -28,6 +29,7 @@ class BaseSampler:
             ):
         self.coach = coach
         self.eval_env = eval_env
+        self.dump_env = dump_env
         eval_max_steps = None if eval_max_steps is None else int(eval_max_steps)
         eval_max_trajectories = (None if eval_max_trajectories is None else
             int(eval_max_trajectories))
