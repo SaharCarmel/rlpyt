@@ -1,8 +1,19 @@
 <img align="right" width="205" height="109" src="/images/bair_logo.png">
 
 # rlpyt
+[![tests](https://github.com/astooke/rlpyt/workflows/tests/badge.svg)](https://github.com/astooke/rlpyt/actions)
+[![codecov](https://codecov.io/gh/astooke/rlpyt/graph/badge.svg)](https://codecov.io/gh/astooke/rlpyt)
+[![Docs](https://readthedocs.org/projects/rlpyt/badge/?version=latest&style=flat)](https://rlpyt.readthedocs.io/en/latest/)
+[![GitHub license](https://img.shields.io/github/license/astooke/rlpyt)](https://github.com/astooke/rlpyt/blob/master/LICENSE)
+[![GitHub issues](https://img.shields.io/github/issues/astooke/rlpyt)](https://github.com/astooke/rlpyt/issues)
+[![GitHub stars](https://img.shields.io/github/stars/astooke/rlpyt)](https://github.com/astooke/rlpyt/stargazers)
 
 ## Deep Reinforcement Learning in PyTorch
+
+*NEW: extended documentation available at [https://rlpyt.readthedocs.io](https://rlpyt.readthedocs.io)  (as of 27 Jan 2020)*
+
+*View the [Change Log](CHANGELOG.md)*
+
 
 Modular, optimized implementations of common deep RL algorithms in PyTorch, with unified infrastructure supporting all three major families of model-free algorithms: policy gradient, deep-q learning, and q-function policy gradient.  Intended to be a high-throughput code-base for small- to medium-scale research (large-scale meaning like OpenAI Dota with 100's GPUs).  Key capabilities/features include:
 
@@ -52,7 +63,7 @@ This is also intended to support environments with multi-modal observations or a
 
 ## Future Developments.
 
-Overall the code is stable, but might still develop, changes may occur.  Open to suggestions/contributions for other established algorithms to add or other developments to support more use cases.
+Overall the code is stable, but might still develop, changes may occur.  Open to suggestions/contributions for other established algorithms to add or other developments to support more use cases--please see our simple [contribution guidelines](CONTRIBUTING.md).
 
 
 

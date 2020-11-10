@@ -47,6 +47,8 @@ _tf_summary_writer = None
 _disabled = False
 _tabular_disabled = False
 
+_iteration = 0
+
 
 def disable():
     global _disabled
@@ -66,6 +68,11 @@ def enable():
 def enable_tabular():
     global _tabular_disabled
     _tabular_disabled = False
+
+
+def set_iteration(iteration):
+    global _iteration
+    _iteration = iteration
 
 
 def _add_output(file_name, arr, fds, mode='a'):
@@ -118,7 +125,7 @@ def hold_tabular_output(file_name):
 
 
 def set_snapshot_dir(dir_name):
-    os.system("mkdir -p %s" % dir_name)
+    mkdir_p(dir_name)
     global _snapshot_dir
     _snapshot_dir = dir_name
 
@@ -171,9 +178,11 @@ def set_log_tabular_only(log_tabular_only):
 def get_log_tabular_only():
     return _log_tabular_only
 
+
 def set_disable_prefix(disable_prefix):
     global _disable_prefix
     _disable_prefix = disable_prefix
+
 
 def get_disable_prefix():
     return _disable_prefix
@@ -201,7 +210,10 @@ def log(s, with_prefix=True, with_timestamp=True, color=None):
 
 def record_tabular(key, val, *args, **kwargs):
     # if not _disabled and not _tabular_disabled:
-    _tabular.append((_tabular_prefix_str + str(key), str(val)))
+    key = _tabular_prefix_str + str(key)
+    _tabular.append((key, str(val)))
+    if _tf_summary_writer is not None:
+        _tf_summary_writer.add_scalar(key, val, _iteration)
 
 
 def push_tabular_prefix(key):
@@ -329,6 +341,11 @@ def save_itr_params(itr, params):
                 file_name = osp.join(get_snapshot_dir(), 'itr_%d.pkl' % itr)
             else:
                 return
+        elif _snapshot_mode == "last+gap":
+            if itr == 0 or (itr + 1) % _snapshot_gap == 0:
+                file_name = osp.join(get_snapshot_dir(), 'itr_%d.pkl' % itr)
+                torch.save(params, file_name)
+            file_name = osp.join(get_snapshot_dir(), 'params.pkl')
         elif _snapshot_mode == 'none':
             return
         else:
@@ -439,6 +456,8 @@ def record_tabular_misc_stat(key, values, placement='back'):
     else:
         prefix = key
         suffix = ""
+        if _tf_summary_writer is not None:
+            prefix += "/"  # Group stats together in Tensorboard.
     if len(values) > 0:
         record_tabular(prefix + "Average" + suffix, np.average(values))
         record_tabular(prefix + "Std" + suffix, np.std(values))

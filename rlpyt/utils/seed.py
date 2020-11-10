@@ -8,6 +8,8 @@ seed_ = None
 
 
 def set_seed(seed):
+    """Sets random.seed, np.random.seed, torch.manual_seed,
+    torch.cuda.manual_seed."""
     seed %= 4294967294
     global seed_
     seed_ = seed
@@ -47,3 +49,17 @@ def make_seed():
     t3 = t3 - int(t3)
     t3 = int(t3 * d * s_inv * 10) % d
     return (t3 - t2) % d
+
+
+def set_envs_seeds(envs, seed):
+    """Set different seeds for a collection of envs, if applicable. Standard
+    rlpyt envs and spaces don't necessarily have this method, but gym envs
+    and spaces do."""
+    if seed is not None:
+        for i, env in enumerate(envs):
+            if hasattr(env, "seed"):  # e.g. Gym environments have seed.
+                env.seed(seed + i)
+            if hasattr(env.action_space, "seed"):  # e.g. Gym spaces have seed.
+                env.action_space.seed(seed + i)
+            if hasattr(env.observation_space, "seed"):
+                env.observation_space.seed(seed + i)

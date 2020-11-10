@@ -52,6 +52,7 @@ class SAC_V(RlAlgorithm):
             n_step_return=1,
             updates_per_sync=1,  # For async mode only.
             bootstrap_timelimit=True,
+            ReplayBufferCls=None,  #  Leave None to select by above options.
             ):
         if optim_kwargs is None:
             optim_kwargs = dict()
@@ -126,6 +127,11 @@ class SAC_V(RlAlgorithm):
             ReplayCls = AsyncUniformReplayBuffer if async_ else UniformReplayBuffer
         else:
             ReplayCls = AsyncTlUniformReplayBuffer if async_ else TlUniformReplayBuffer
+        if self.ReplayBufferCls is not None:
+            ReplayCls = self.ReplayBufferCls
+            logger.log(f"WARNING: ignoring internal selection logic and using"
+                f" input replay buffer class: {ReplayCls} -- compatibility not"
+                " guaranteed.")
         self.replay_buffer = ReplayCls(**replay_kwargs)
 
 
@@ -340,10 +346,10 @@ class SAC_V(RlAlgorithm):
         opt_info.q2Loss.append(q2_loss.item())
         opt_info.vLoss.append(v_loss.item())
         opt_info.piLoss.append(pi_loss.item())
-        opt_info.q1GradNorm.append(q1_grad_norm)
-        opt_info.q2GradNorm.append(q2_grad_norm)
-        opt_info.vGradNorm.append(v_grad_norm)
-        opt_info.piGradNorm.append(pi_grad_norm)
+        opt_info.q1GradNorm.append(torch.tensor(q1_grad_norm).item())  # backwards compatible
+        opt_info.q2GradNorm.append(torch.tensor(q2_grad_norm).item())  # backwards compatible
+        opt_info.vGradNorm.append(torch.tensor(v_grad_norm).item())  # backwards compatible
+        opt_info.piGradNorm.append(torch.tensor(pi_grad_norm).item())  # backwards compatible
         opt_info.q1.extend(q1[::10].numpy())  # Downsample for stats.
         opt_info.q2.extend(q2[::10].numpy())
         opt_info.v.extend(v[::10].numpy())

@@ -1,7 +1,7 @@
 
 import torch
-from torch.nn.parallel import DistributedDataParallel as DDP
-from torch.nn.parallel import DistributedDataParallelCPU as DDPC
+# from torch.nn.parallel import DistributedDataParallel as DDP
+# from torch.nn.parallel import DistributedDataParallelCPU as DDPC  # Deprecated
 
 from rlpyt.agents.base import BaseAgent, AgentStep
 from rlpyt.agents.dqn.epsilon_greedy import EpsilonGreedyAgentMixin
@@ -16,8 +16,12 @@ AgentInfo = namedarraytuple("AgentInfo", "q")
 
 
 class DqnAgent(EpsilonGreedyAgentMixin, BaseAgent):
+    """
+    Standard agent for DQN algorithms with epsilon-greedy exploration.  
+    """
 
     def __call__(self, observation, prev_action, prev_reward):
+        """Returns Q-values for states/observations (with grad)."""
         prev_action = self.distribution.to_onehot(prev_action)
         model_inputs = buffer_to((observation, prev_action, prev_reward),
             device=self.device)
@@ -26,11 +30,18 @@ class DqnAgent(EpsilonGreedyAgentMixin, BaseAgent):
 
     def initialize(self, env_spaces, share_memory=False,
             global_B=1, env_ranks=None):
+        """Along with standard initialization, creates vector-valued epsilon
+        for exploration, if applicable, with a different epsilon for each
+        environment instance."""
+        _initial_model_state_dict = self.initial_model_state_dict
+        self.initial_model_state_dict = None  # don't let base agent try to initialize model
         super().initialize(env_spaces, share_memory,
             global_B=global_B, env_ranks=env_ranks)
         self.target_model = self.ModelCls(**self.env_model_kwargs,
             **self.model_kwargs)
-        self.target_model.load_state_dict(self.model.state_dict())
+        if _initial_model_state_dict is not None:
+            self.model.load_state_dict(_initial_model_state_dict['model'])
+            self.target_model.load_state_dict(_initial_model_state_dict['model'])
         self.distribution = EpsilonGreedy(dim=env_spaces.action.n)
         if env_ranks is not None:
             self.make_vec_eps(global_B, env_ranks)
@@ -45,6 +56,8 @@ class DqnAgent(EpsilonGreedyAgentMixin, BaseAgent):
 
     @torch.no_grad()
     def step(self, observation, prev_action, prev_reward):
+        """Computes Q-values for states/observations and selects actions by
+        epsilon-greedy. (no grad)"""
         prev_action = self.distribution.to_onehot(prev_action)
         model_inputs = buffer_to((observation, prev_action, prev_reward),
             device=self.device)
@@ -56,6 +69,7 @@ class DqnAgent(EpsilonGreedyAgentMixin, BaseAgent):
         return AgentStep(action=action, agent_info=agent_info)
 
     def target(self, observation, prev_action, prev_reward):
+        """Returns the target Q-values for states/observations."""
         prev_action = self.distribution.to_onehot(prev_action)
         model_inputs = buffer_to((observation, prev_action, prev_reward),
             device=self.device)
@@ -63,5 +77,5 @@ class DqnAgent(EpsilonGreedyAgentMixin, BaseAgent):
         return target_q.cpu()
 
     def update_target(self, tau=1):
+        """Copies the model parameters into the target model."""
         update_state_dict(self.target_model, self.model.state_dict(), tau)
-

@@ -1,6 +1,6 @@
 
 from torch.nn.parallel import DistributedDataParallel as DDP
-from torch.nn.parallel import DistributedDataParallelCPU as DDPC
+# from torch.nn.parallel import DistributedDataParallelCPU as DDPC  # Deprecated.
 
 from rlpyt.agents.qpg.ddpg_agent import DdpgAgent
 from rlpyt.utils.buffer import buffer_to
@@ -11,6 +11,7 @@ from rlpyt.utils.logging import logger
 
 
 class Td3Agent(DdpgAgent):
+    """Agent for TD3 algorithm, using two Q-models and two target Q-models."""
 
     def __init__(
             self,
@@ -20,6 +21,7 @@ class Td3Agent(DdpgAgent):
             initial_q2_model_state_dict=None,
             **kwargs
             ):
+        """Saves input arguments."""
         super().__init__(**kwargs)
         save__init__args(locals())
         self.min_itr_learn = 0  # Get from algo.
@@ -47,16 +49,20 @@ class Td3Agent(DdpgAgent):
         self.target_q2_model.to(self.device)
 
     def data_parallel(self):
-        super().data_parallel()
-        if self.device.type == "cpu":
-            self.q2_model = DDPC(self.q2_model)
-        else:
-            self.q2_model = DDP(self.q2_model)
+        device_id = super().data_parallel()
+        self.q2_model = DDP(
+            self.q2_model,
+            device_ids=None if device_id is None else [device_id],  # 1 GPU.
+            output_device=device_id,
+        )
+        return device_id
 
     def give_min_itr_learn(self, min_itr_learn):
         self.min_itr_learn = min_itr_learn  # From algo.
 
     def q(self, observation, prev_action, prev_reward, action):
+        """Compute twin Q-values for state/observation and input action 
+        (with grad)."""
         model_inputs = buffer_to((observation, prev_action, prev_reward,
             action), device=self.device)
         q1 = self.q_model(*model_inputs)
@@ -64,6 +70,8 @@ class Td3Agent(DdpgAgent):
         return q1.cpu(), q2.cpu()
 
     def target_q_at_mu(self, observation, prev_action, prev_reward):
+        """Compute twin target Q-values for state/observation, through
+        target mu model."""
         model_inputs = buffer_to((observation, prev_action, prev_reward),
             device=self.device)
         target_mu = self.target_model(*model_inputs)
